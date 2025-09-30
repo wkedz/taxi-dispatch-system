@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Taxi Grid Dashboard</title>
+    <style>
+      body { display: flex; font-family: sans-serif; }
+      #left { flex: none; }
+      #grid { border: 1px solid #ccc; }
+      #right { margin-left: 20px; min-width: 200px; }
+      #legend h3, #stats h3 { margin: 5px 0; }
+      label { display: block; margin: 2px 0; }
+      .stat { margin: 2px 0; }
+    </style>
+  </head>
+  <body>
+    <div id="left">
+      <div id="info">Refreshing every 1s…</div>
+      <canvas id="grid" width="1000" height="1000"></canvas>
+    </div>
+    <div id="right">
+      <div id="stats">
+        <h3>Statistics</h3>
+        <div class="stat" id="stat-taxis"></div>
+        <div class="stat" id="stat-trips"></div>
+      </div>
+      <div id="legend">
+        <h3>Show taxis</h3>
+        <label><input type="checkbox" id="show-taxi-available" checked> Available (blue)</label>
+        <label><input type="checkbox" id="show-taxi-busy" checked> Busy (orange)</label>
+        <label><input type="checkbox" id="show-taxi-offline" checked> Offline (gray)</label>
+        <h3>Show trips</h3>
+        <label><input type="checkbox" id="show-trip-start" checked> Start (green)</label>
+        <label><input type="checkbox" id="show-trip-end" checked> End (red)</label>
+      </div>
+    </div>
+
+    <script>
+      const SIZE = 100;  // grid size 100x100
+      const CELL = 10;    // px per cell
+
+      const c = document.getElementById('grid');
+      const ctx = c.getContext('2d');
+
+      const API = (location.origin.includes(':8082')
+        ? location.origin.replace(':8082', ':8000')
+        : 'http://localhost:8000');
+
+      function drawGrid() {
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.strokeStyle = '#f0f0f0';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= SIZE; i++) {
+          const pos = i * CELL;
+          ctx.beginPath(); ctx.moveTo(pos, 0); ctx.lineTo(pos, SIZE*CELL); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, pos); ctx.lineTo(SIZE*CELL, pos); ctx.stroke();
+        }
+      }
+
+      function fillCell(x, y, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect((x - 1) * CELL, (y - 1) * CELL, CELL, CELL);
+      }
+
+      async function j(url) {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+        return r.json();
+      }
+
+      function updateStats(taxis, trips) {
+        const counts = { available: 0, busy: 0, offline: 0 };
+        for (const tx of taxis) counts[tx.status]++;
+
+        const tripCounts = { active: 0, completed: 0, cancelled: 0 };
+        for (const tr of trips) {
+          if (tr.status === 'requested' || tr.status === 'in_progress') tripCounts.active++;
+          if (tr.status === 'completed') tripCounts.completed++;
+          if (tr.status === 'cancelled') tripCounts.cancelled++;
+        }
+
+        document.getElementById('stat-taxis').textContent =
+          `Taxis: ${counts.available} available, ${counts.busy} busy, ${counts.offline} offline`;
+
+        document.getElementById('stat-trips').textContent =
+          `Trips: ${tripCounts.active} active, ${tripCounts.completed} completed, ${tripCounts.cancelled} cancelled`;
+      }
+
+      async function refresh() {
+        try {
+          const [taxis, trips] = await Promise.all([
+            j(`${API}/taxis`),
+            j(`${API}/trips?limit=100`),
+          ]);
+
+          drawGrid();
+
+          // trips
+          if (document.getElementById('show-trip-start').checked) {
+            for (const t of trips) fillCell(t.start_x, t.start_y, '#2ca02c');
+          }
+          if (document.getElementById('show-trip-end').checked) {
+            for (const t of trips) fillCell(t.end_x,   t.end_y,   '#d62728');
+          }
+
+          // taxis
+          for (const tx of taxis) {
+            if (tx.status === 'available' && document.getElementById('show-taxi-available').checked) {
+              fillCell(tx.x, tx.y, '#1f77b4');
+            }
+            if (tx.status === 'busy' && document.getElementById('show-taxi-busy').checked) {
+              fillCell(tx.x, tx.y, '#ff7f0e');
+            }
+            if (tx.status === 'offline' && document.getElementById('show-taxi-offline').checked) {
+              fillCell(tx.x, tx.y, '#7f7f7f');
+            }
+          }
+
+          updateStats(taxis, trips);
+
+          document.getElementById('info').textContent = 'Refreshing every 1s…';
+        } catch (e) {
+          document.getElementById('info').textContent = `Fetch error: ${e}`;
+          console.error(e);
+        }
+      }
+
+      drawGrid();
+      refresh();
+      setInterval(refresh, 1000);
+    </script>
+  </body>
+</html>

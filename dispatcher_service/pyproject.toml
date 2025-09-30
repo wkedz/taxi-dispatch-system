@@ -1,0 +1,29 @@
+[project]
+name = "dispatcher-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.16.5",
+    "fastapi>=0.117.1",
+    "httpx>=0.28.1",
+    "psycopg2-binary>=2.9.10",
+    "pydantic-settings>=2.11.0",
+    "sqlalchemy>=2.0.43",
+    "uvicorn[standard]>=0.37.0",
+    "common>=0.1.0"
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.setuptools.packages.find]
+where = ["app"]         # katalog źródłowy
+include = ["app*"]      # wszystko w app/
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

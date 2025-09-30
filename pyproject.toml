@@ -1,0 +1,52 @@
+[project]
+name = "taxi-dispatch-system"
+description = "Taxi dispatch system for managing taxis."
+readme = "README.md"
+authors = [ "Wiesław Kędzierski <w.m.kedzierski@gmail.com>" ]
+requires-python = '>=3.12'
+version = "0.1.0"
+dependencies = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-select = [
+  "I",   # isort (sortowanie importów)
+  "UP",  # pyupgrade (modernizacja składni)
+  "B",   # bugbear (potencjalne błędy)
+  "C90", # mccabe (złożoność)
+]
+ignore = ["E501"]
+exclude = [
+    "dispatcher_service/migrations",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends", "fastapi.Query", "fastapi.params.Query"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+exclude = [
+    "dispatcher_service/migrations",
+]
+
+[tool.uv.sources]
+common = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+  "dispatcher_service",
+  "taxi_service",
+  "client_service",
+  "grid_service",
+  "common",
+]

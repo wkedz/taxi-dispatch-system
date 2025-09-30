@@ -1,0 +1,9 @@
+[project]
+name = "grid-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.117.1",
+    "uvicorn[standard]>=0.37.0",
+    "common>=0.1.0"    
+]

@@ -1,0 +1,19 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+    -   id: trailing-whitespace
+        exclude: ^dispatcher_service/migrations/
+    -   id: end-of-file-fixer
+        exclude: ^dispatcher_service/migrations/
+    -   id: check-yaml
+        exclude: ^dispatcher_service/migrations/
+
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+    -   id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        exclude: ^dispatcher_service/migrations/
+    -   id: ruff-format
+        exclude: ^dispatcher_service/migrations/
